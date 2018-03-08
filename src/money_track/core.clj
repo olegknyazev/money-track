@@ -1,7 +1,7 @@
 (ns money-track.core
+  (:require [compojure.core :refer :all]
+            [compojure.route :as route])
   (:gen-class))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+(defroutes app
+  (GET "/" [] "<h1>Hello World!</h1>"))

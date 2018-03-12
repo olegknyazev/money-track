@@ -7,6 +7,7 @@
                  [compojure "1.6.0"]
                  [ragtime "0.7.2"]
                  [ring/ring-jetty-adapter "1.6.3"]
-                 [ring/ring-devel "1.6.3"]]
+                 [ring/ring-devel "1.6.3"]
+                 [ring/ring-json "0.4.0"]]
   :plugins [[lein-ring "0.12.3"]]
   :ring {:handler money-track.core/app})

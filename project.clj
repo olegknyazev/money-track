@@ -4,10 +4,11 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/java.jdbc "0.7.3"]
                  [org.postgresql/postgresql "42.2.1.jre7"]
-                 [compojure "1.6.0"]
                  [ragtime "0.7.2"]
+                 [compojure "1.6.0"]
                  [ring/ring-jetty-adapter "1.6.3"]
                  [ring/ring-devel "1.6.3"]
-                 [ring/ring-json "0.4.0"]]
+                 [ring/ring-json "0.4.0"]
+                 [metosin/ring-http-response "0.9.0"]]
   :plugins [[lein-ring "0.12.3"]]
   :ring {:handler money-track.core/app})

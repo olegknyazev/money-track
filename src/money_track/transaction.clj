@@ -7,3 +7,7 @@
 
 (defn add-transaction! [t]
   (jdbc/insert! data/db-spec :transaction t))
+
+(defn transaction? [t]
+  (and (map? t)
+       (every? #(contains? t %) [:amount :merchant])))

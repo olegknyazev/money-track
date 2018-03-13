@@ -7,7 +7,7 @@
               :user "money-track"
               :password "money-track"})
 
-(def migration-config
+(defn get-migration-config []
   {:datastore (ragtime.jdbc/sql-database db-spec)
    :migrations (ragtime.jdbc/load-resources "migrations")})
 

@@ -1,14 +1,16 @@
 (ns money-track.core
   (:require [compojure.core :refer [defroutes GET POST]]
             [compojure.route :as route]
-            [ring.middleware.json :as middleware.json]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.util.http-response :as response]
             [money-track.transaction :as tx])
   (:gen-class))
 
 (defroutes app-routes
-  (GET "/transaction" []
-       (response/ok (tx/get-transactions)))
+  (GET "/transaction" req
+       (response/ok (tx/get-transactions (:params req))))
   (POST "/transaction/new" {t :body}
         (if (tx/transaction? t)
           (do
@@ -18,6 +20,8 @@
 
 (def app
   (-> app-routes
-      (middleware.json/wrap-json-response)
-      (middleware.json/wrap-json-body {:keywords? true})))
+      wrap-keyword-params
+      wrap-params
+      wrap-json-response
+      (wrap-json-body {:keywords? true})))
 

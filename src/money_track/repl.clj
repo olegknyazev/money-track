@@ -6,7 +6,7 @@
             [ragtime.repl :as rag]))
 
 (defn start-server []
-  (run-jetty (wrap-reload #'app) {:port 3000}))
+  (run-jetty (wrap-reload #'app) {:port 3000 :join? false}))
 
 (defn migrate []
   (rag/migrate (data/get-migration-config)))

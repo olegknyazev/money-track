@@ -3,8 +3,23 @@
             [clojure.java.jdbc :as jdbc])
   (:import java.time.LocalDate java.sql.Date))
 
-(declare extract-date)
-(declare coerce-transaction)
+(defn transaction? [t]
+  (and (map? t)
+       (every? #(contains? t %) [:amount :merchant])))
+
+(defn- min-date [] (LocalDate/of 1990 01 01))
+(defn- max-date [] (LocalDate/now))
+(defn- sql-date [d] (Date/valueOf d))
+
+(defn- coerce-transaction [t]
+  (if (transaction? t)
+    (assoc t :date (sql-date (:date t max-date)))
+    nil))
+
+(defn- extract-date [params]
+  (assoc params
+         :date-from (sql-date (:date-from params (min-date)))
+         :date-to (sql-date (:date-to params (max-date)))))
 
 (defn get-transactions
   ([] (get-transactions {}))
@@ -20,23 +35,3 @@
     (if t
       (jdbc/insert! data/db-spec :transaction t)
       nil)))
-
-(defn transaction? [t]
-  (and (map? t)
-       (every? #(contains? t %) [:amount :merchant])))
-
-(defn- coerce-transaction [t]
-  (if (transaction? t)
-    (assoc t :date (sql-date (:date t max-date)))
-    nil))
-
-(defn- min-date [] (LocalDate/of 1990 01 01))
-(defn- max-date [] (LocalDate/now))
-(defn- sql-date [d] (Date/valueOf d))
-
-(defn- extract-date [params]
-  (assoc params
-         :date-from (sql-date (:date-from params (min-date)))
-         :date-to (sql-date (:date-to params (max-date)))))
-
-

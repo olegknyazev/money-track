@@ -1,5 +1,5 @@
 (ns money-track.core
-  (:require [compojure.core :refer [defroutes GET POST]]
+  (:require [compojure.core :refer [defroutes ANY GET POST]]
             [compojure.route :as route]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
@@ -9,6 +9,8 @@
   (:gen-class))
 
 (defroutes app-routes
+  (ANY "/ping" req
+       (response/ok (dissoc req :body)))
   (GET "/transaction" req
        (response/ok (tx/get-transactions (:params req))))
   (POST "/transaction/new" {t :body}
@@ -16,7 +18,7 @@
           (do
             (tx/add-transaction! t)
             (response/ok {}))
-          (response/bad-request)))) 
+          (response/bad-request))))
 
 (def app
   (-> app-routes

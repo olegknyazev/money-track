@@ -10,7 +10,7 @@
 
 (defroutes app-routes
   (ANY "/ping" req
-       (response/ok (dissoc req :body)))
+       (response/ok req))
   (GET "/transaction" req
        (response/ok (tx/get-transactions (:params req))))
   (PUT "/transaction/:id" [id :as {tx :body}]
@@ -23,14 +23,25 @@
             (response/ok)
             (response/bad-request)))
   (POST "/transaction/new" {tx :body}
-        (if (tx/transaction? tx)
-          (response/ok (tx/add-transaction! tx))
-          (response/bad-request))))
+        (response/ok (tx/add-transaction! tx))))
+
+(defn- wrap-exceptions [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch clojure.lang.ExceptionInfo e
+        (let [data (ex-data e)]
+          (if (= (:type data) :bad-format)
+            (response/bad-request {:message (.getMessage e)
+                                   :data data}))))
+      (catch Exception e
+        (response/internal-server-error (.getMessage e))))))
 
 (def app
   (-> app-routes
       wrap-keyword-params
       wrap-params
+      wrap-exceptions
       wrap-json-response
       (wrap-json-body {:keywords? true})))
 

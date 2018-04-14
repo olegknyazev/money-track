@@ -37,10 +37,20 @@
 
 (defn update-transaction!
   [id tx]
-  (jdbc/update! data/db-spec
-                :transaction
-                (parse-transaction tx)
-                ["id = ?" id]))
+  (let [[rows-affected]
+        (jdbc/update! data/db-spec
+                      :transaction
+                      (parse-transaction tx)
+                      ["id = ?" id])]
+    (= rows-affected 1)))
+
+(defn delete-transaction!
+  [id]
+  (let [[rows-affected]
+        (jdbc/delete! data/db-spec
+                      :transaction
+                      ["id = ?" id])]
+    (= rows-affected 1)))
 
 (defn add-transaction! [tx]
   (let [tx (parse-transaction tx)]

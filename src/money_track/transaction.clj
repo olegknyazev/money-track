@@ -36,11 +36,11 @@
                   (:date-to params)]))))
 
 (defn update-transaction!
-  [tx]
+  [id tx]
   (jdbc/update! data/db-spec
                 :transaction
                 (parse-transaction tx)
-                ["id = ?" (:id tx)]))
+                ["id = ?" id]))
 
 (defn add-transaction! [tx]
   (let [tx (parse-transaction tx)]

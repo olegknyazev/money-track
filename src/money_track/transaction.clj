@@ -5,19 +5,25 @@
             [clojure.walk :as walk])
   (:import java.time.LocalDate java.sql.Date))
 
-(def ^:private current-ns-name (str *ns*))
+(spec/def ::amount number?)
+(spec/def ::merchant string?)
+(spec/def ::comment string?)
+(spec/def ::transaction (spec/keys :req [::amount ::merchant]
+                                   :opt [::comment]))
 
 (defn- normalize-date [d]
   (if (instance? String d)
     (.substring d 0 10)
     d))
 
-(defn- normalize-transaction-date [tx]
+(defn- normalize-dates [tx]
   (if (contains? tx ::date)
-    (assoc tx ::date (sql-date (normalize-date (::date tx))))
+    (assoc tx ::date (Date/valueOf (normalize-date (::date tx))))
     tx))
 
-(defn- qualify-transaction [tx]
+(def ^:private current-ns-name (str *ns*))
+
+(defn- qualify-keywords [tx]
   (let [prefix-unqualified
         (fn [x]
           (if (simple-keyword? x)
@@ -27,20 +33,14 @@
 
 (defn transaction [maybe-tx]
   (let [maybe-tx (->> maybe-tx
-                      qualify-transaction
-                      normalize-transaction-date)
+                      qualify-keywords
+                      normalize-dates)
         tx (spec/conform ::transaction maybe-tx)]
     (if-not (spec/invalid? tx)
       tx
       (throw (ex-info "Invalid transaction format"
                       {:type :bad-format
                        :explanation (spec/explain-data ::transaction maybe-tx)})))))
-
-(spec/def ::amount number?)
-(spec/def ::merchant string?)
-(spec/def ::comment string?)
-(spec/def ::transaction (spec/keys :req [::amount ::merchant]
-                                   :opt [::comment]))
 
 (defn- min-date [] (LocalDate/of 1990 01 01))
 (defn- max-date [] (LocalDate/now))
@@ -65,7 +65,7 @@
   (let [[rows-affected]
         (jdbc/update! data/db-spec
                       :transaction
-                      (normalize-transaction-date tx)
+                      tx
                       ["id = ?" id])]
     (= rows-affected 1)))
 
@@ -78,6 +78,4 @@
     (= rows-affected 1)))
 
 (defn add-transaction! [tx]
-  (if-let [tx (transaction tx)]
-    (first (jdbc/insert! data/db-spec :transaction tx))
-    nil))
+  (first (jdbc/insert! data/db-spec :transaction tx)))

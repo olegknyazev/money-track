@@ -14,16 +14,15 @@
   (GET "/transaction" req
        (response/ok (tx/get-transactions (:params req))))
   (PUT "/transaction/:id" [id :as {tx :body}]
-       (if (and (tx/transaction? tx)
-                (tx/update-transaction! (Integer/valueOf id) tx))
-         (response/ok))
-         (response/bad-request))
+       (if (tx/update-transaction! (Integer/valueOf id) (tx/transaction tx))
+         (response/ok)
+         (response/not-found)))
   (DELETE "/transaction/:id" [id]
           (if (tx/delete-transaction! (Integer/valueOf id))
             (response/ok)
-            (response/bad-request)))
+            (response/not-found)))
   (POST "/transaction/new" {tx :body}
-        (response/ok (tx/add-transaction! tx))))
+        (response/ok (tx/add-transaction! (tx/transaction tx)))))
 
 (defn- wrap-exceptions [handler]
   (fn [request]

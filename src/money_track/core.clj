@@ -15,9 +15,7 @@
        (response/ok (tx/get-transactions (:params req))))
   (POST "/transaction/new" {t :body}
         (if (tx/transaction? t)
-          (do
-            (tx/add-transaction! t)
-            (response/ok {}))
+          (response/ok (tx/add-transaction! t))
           (response/bad-request))))
 
 (def app

@@ -2,7 +2,7 @@
   (:require [ragtime.jdbc]
             [clojure.java.jdbc :as jdbc]
             [clojure.walk :as walk])
-  (:import java.time.Instant java.sql.Date java.time.ZoneId))
+  (:import java.time.Instant java.sql.Timestamp))
 
 (def db-spec {:dbtype "postgresql"
               :dbname "money-track"
@@ -16,21 +16,18 @@
 
 (defn- to-sql-value [x]
   (if (instance? Instant x)
-    (Date. (.toEpochMilli x))
+    (Timestamp/from x)
     x))
 
 (defn- to-sql [obj]
   (walk/postwalk to-sql-value obj))
 
-(defn- from-sql-value [x]
-  (if (instance? Date x)
-    (-> x
-        .toLocalDate
-        (.atStartOfDay (ZoneId/of "Z"))
-        .toInstant)
+(defn from-sql-value [x]
+  (if (instance? Timestamp x)
+    (.toInstant x)
     x))
 
-(defn- from-sql [obj]
+(defn from-sql [obj]
   (walk/postwalk from-sql-value obj))
 
 (defn query [query & args]

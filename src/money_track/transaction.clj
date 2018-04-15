@@ -2,18 +2,18 @@
   (:require [money-track.data :as data]
             [clojure.spec.alpha :as spec]
             [clojure.walk :as walk])
-  (:import java.time.ZonedDateTime java.time.Instant java.sql.Date))
+  (:import java.time.ZonedDateTime java.time.Instant))
 
 (spec/def ::amount number?)
 (spec/def ::merchant string?)
 (spec/def ::comment string?)
-(spec/def ::date inst?)
-(spec/def ::transaction (spec/keys :req-un [::amount ::merchant ::date]
+(spec/def ::datetime inst?)
+(spec/def ::transaction (spec/keys :req-un [::amount ::merchant ::datetime]
                                    :opt-un [::comment]))
 
 (defn- normalize-dates [tx]
-  (if (contains? tx :date)
-    (assoc tx :date (Instant/parse (:date tx))) ; TODO parse only if string
+  (if (contains? tx :datetime)
+    (assoc tx :datetime (Instant/parse (:datetime tx))) ; TODO parse only if string
     tx))
 
 (defn transaction [maybe-tx]
@@ -37,7 +37,7 @@
   ([] (get-transactions {}))
   ([params]
    (let [params (normalize-query-dates params)]
-     (data/query "SELECT * FROM transaction WHERE date >= ? AND date <= ?;"
+     (data/query "SELECT * FROM transaction WHERE datetime >= ? AND datetime <= ?;"
                   (:date-from params)
                   (:date-to params)))))
 

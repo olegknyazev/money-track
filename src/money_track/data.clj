@@ -1,5 +1,8 @@
 (ns money-track.data
-  (:require [ragtime.jdbc]))
+  (:require [ragtime.jdbc]
+            [clojure.java.jdbc :as jdbc]
+            [clojure.walk :as walk])
+  (:import java.time.Instant java.sql.Date java.time.ZoneId))
 
 (def db-spec {:dbtype "postgresql"
               :dbname "money-track"
@@ -11,3 +14,37 @@
   {:datastore (ragtime.jdbc/sql-database db-spec)
    :migrations (ragtime.jdbc/load-resources "migrations")})
 
+(defn- to-sql-value [x]
+  (if (instance? Instant x)
+    (Date. (.toEpochMilli x))
+    x))
+
+(defn- to-sql [obj]
+  (walk/postwalk to-sql-value obj))
+
+(defn- from-sql-value [x]
+  (if (instance? Date x)
+    (-> x
+        .toLocalDate
+        (.atStartOfDay (ZoneId/of "Z"))
+        .toInstant)
+    x))
+
+(defn- from-sql [obj]
+  (walk/postwalk from-sql-value obj))
+
+(defn query [query & args]
+  (from-sql (jdbc/query db-spec (apply list query (to-sql args)))))
+
+(defn update! [table row where]
+  (let [[rows-affected]
+        (jdbc/update! db-spec table (to-sql row) (to-sql where))]
+    rows-affected))
+
+(defn delete! [table where]
+  (let [[rows-affected]
+        (jdbc/delete! db-spec table (to-sql where))]
+    rows-affected))
+
+(defn insert! [table row]
+  (from-sql (jdbc/insert! db-spec table (to-sql row))))

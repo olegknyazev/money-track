@@ -1,12 +1,17 @@
 (ns money-track.core
   (:require [compojure.core :refer [defroutes ANY GET PUT POST DELETE]]
             [compojure.route :as route]
+            [cheshire.generate :refer [add-encoder]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.util.http-response :as response]
             [money-track.transaction :as tx])
   (:gen-class))
+
+(add-encoder java.time.Instant
+             (fn [inst jsonGenerator]
+               (.writeString jsonGenerator (str inst))))
 
 (defroutes app-routes
   (ANY "/ping" req

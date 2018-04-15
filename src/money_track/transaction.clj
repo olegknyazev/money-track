@@ -1,40 +1,23 @@
 (ns money-track.transaction
   (:require [money-track.data :as data]
-            [clojure.java.jdbc :as jdbc]
             [clojure.spec.alpha :as spec]
             [clojure.walk :as walk])
-  (:import java.time.LocalDate java.sql.Date))
+  (:import java.time.ZonedDateTime java.time.Instant java.sql.Date))
 
 (spec/def ::amount number?)
 (spec/def ::merchant string?)
 (spec/def ::comment string?)
-(spec/def ::transaction (spec/keys :req [::amount ::merchant]
-                                   :opt [::comment]))
-
-(defn- normalize-date [d]
-  (if (instance? String d)
-    (.substring d 0 10)
-    d))
+(spec/def ::date inst?)
+(spec/def ::transaction (spec/keys :req-un [::amount ::merchant ::date]
+                                   :opt-un [::comment]))
 
 (defn- normalize-dates [tx]
-  (if (contains? tx ::date)
-    (assoc tx ::date (Date/valueOf (normalize-date (::date tx))))
+  (if (contains? tx :date)
+    (assoc tx :date (Instant/parse (:date tx))) ; TODO parse only if string
     tx))
 
-(def ^:private current-ns-name (str *ns*))
-
-(defn- qualify-keywords [tx]
-  (let [prefix-unqualified
-        (fn [x]
-          (if (simple-keyword? x)
-            (keyword current-ns-name (name x))
-            x))]
-    (walk/postwalk prefix-unqualified tx)))
-
 (defn transaction [maybe-tx]
-  (let [maybe-tx (->> maybe-tx
-                      qualify-keywords
-                      normalize-dates)
+  (let [maybe-tx (normalize-dates maybe-tx)
         tx (spec/conform ::transaction maybe-tx)]
     (if-not (spec/invalid? tx)
       tx
@@ -42,40 +25,31 @@
                       {:type :bad-format
                        :explanation (spec/explain-data ::transaction maybe-tx)})))))
 
-(defn- min-date [] (LocalDate/of 1990 01 01))
-(defn- max-date [] (LocalDate/now))
-(defn- sql-date [d] (Date/valueOf d))
+(defn- min-date [] (Instant/EPOCH))
+(defn- max-date [] (.toInstant (ZonedDateTime/now)))
 
 (defn- normalize-query-dates [params]
   (assoc params
-         :date-from (sql-date (:date-from params (min-date)))
-         :date-to (sql-date (:date-to params (max-date)))))
+         :date-from (:date-from params (min-date))
+         :date-to (:date-to params (max-date))))
 
 (defn get-transactions
   ([] (get-transactions {}))
   ([params]
    (let [params (normalize-query-dates params)]
-     (jdbc/query data/db-spec
-                 ["SELECT * FROM transaction WHERE date >= ? AND date <= ?;"
+     (data/query "SELECT * FROM transaction WHERE date >= ? AND date <= ?;"
                   (:date-from params)
-                  (:date-to params)]))))
+                  (:date-to params)))))
 
-(defn update-transaction!
-  [id tx]
-  (let [[rows-affected]
-        (jdbc/update! data/db-spec
-                      :transaction
-                      tx
-                      ["id = ?" id])]
-    (= rows-affected 1)))
+(defn update-transaction! [id tx]
+  (= 1 (data/update! :transaction
+                     tx
+                     ["id = ?" id])))
 
-(defn delete-transaction!
-  [id]
-  (let [[rows-affected]
-        (jdbc/delete! data/db-spec
-                      :transaction
-                      ["id = ?" id])]
-    (= rows-affected 1)))
+
+(defn delete-transaction! [id]
+  (= 1 (data/delete! :transaction
+                     ["id = ?" id])))
 
 (defn add-transaction! [tx]
-  (first (jdbc/insert! data/db-spec :transaction tx)))
+  (first (data/insert! :transaction tx)))

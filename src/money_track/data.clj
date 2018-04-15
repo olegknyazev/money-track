@@ -1,4 +1,8 @@
 (ns money-track.data
+  "Encapsulates SQL database connection. Provides almost the same
+  interface as standard `clojure.java.jdbc` (`query`, `insert!`, etc...)
+  but hides database connection and performs some additional data
+  conversions."
   (:require [ragtime.jdbc]
             [clojure.java.jdbc :as jdbc]
             [clojure.walk :as walk])
@@ -13,22 +17,6 @@
 (defn get-migration-config []
   {:datastore (ragtime.jdbc/sql-database db-spec)
    :migrations (ragtime.jdbc/load-resources "migrations")})
-
-(defn- to-sql-value [x]
-  (if (instance? Instant x)
-    (Timestamp/from x)
-    x))
-
-(defn- to-sql [obj]
-  (walk/postwalk to-sql-value obj))
-
-(defn from-sql-value [x]
-  (if (instance? Timestamp x)
-    (.toInstant x)
-    x))
-
-(defn from-sql [obj]
-  (walk/postwalk from-sql-value obj))
 
 (defn query [query & args]
   (from-sql (jdbc/query db-spec (apply list query (to-sql args)))))
@@ -45,3 +33,19 @@
 
 (defn insert! [table row]
   (from-sql (jdbc/insert! db-spec table (to-sql row))))
+
+(defn- to-sql-value [x]
+  (if (instance? Instant x)
+    (Timestamp/from x)
+    x))
+
+(defn- to-sql [obj]
+  (walk/postwalk to-sql-value obj))
+
+(defn- from-sql-value [x]
+  (if (instance? Timestamp x)
+    (.toInstant x)
+    x))
+
+(defn- from-sql [obj]
+  (walk/postwalk from-sql-value obj))

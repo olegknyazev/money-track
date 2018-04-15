@@ -1,4 +1,6 @@
 (ns money-track.core
+  "Entry point for the HTTP server. Declares var `app` that is a ring
+  web application which could be served accordingly."
   (:require [compojure.core :refer [defroutes ANY GET PUT POST DELETE]]
             [compojure.route :as route]
             [cheshire.generate :refer [add-encoder]]
@@ -9,6 +11,7 @@
             [money-track.transaction :as tx])
   (:gen-class))
 
+;; TODO move to something like an app initializer (if there is such a thing)
 (add-encoder java.time.Instant
              (fn [inst jsonGenerator]
                (.writeString jsonGenerator (str inst))))

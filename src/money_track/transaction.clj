@@ -1,4 +1,6 @@
 (ns money-track.transaction
+  "Encapsulates transaction data operations. All functions that receive
+  transaction expected a value conformed by function `transaction`."
   (:require [money-track.data :as data]
             [clojure.spec.alpha :as spec]
             [clojure.walk :as walk])

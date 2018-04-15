@@ -2,19 +2,24 @@
   "Entry point for the HTTP server. Declares var `app` that is a ring
   web application which could be served accordingly."
   (:require [compojure.core :refer [defroutes ANY GET PUT POST DELETE]]
-            [compojure.route :as route]
             [cheshire.generate :refer [add-encoder]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.util.http-response :as response]
-            [money-track.transaction :as tx])
+            [money-track.transaction :as tx]
+            [money-track.data :as data])
   (:gen-class))
 
-;; TODO move to something like an app initializer (if there is such a thing)
-(add-encoder java.time.Instant
-             (fn [inst jsonGenerator]
-               (.writeString jsonGenerator (str inst))))
+(defn- register-encoders []
+  (add-encoder java.time.Instant
+               (fn [inst jsonGenerator]
+                 (.writeString jsonGenerator (str inst)))))
+
+(defn initialize [{:keys [migrate] :or {migrate true}}]
+  (register-encoders)
+  (when migrate
+    (data/migrate)))
 
 (defroutes app-routes
   (ANY "/ping" req
@@ -51,4 +56,3 @@
       wrap-exceptions
       wrap-json-response
       (wrap-json-body {:keywords? true})))
-

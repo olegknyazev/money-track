@@ -12,6 +12,7 @@ several years.
 4. Alternatively, you can run server from REPL:
   ```clojure
   (use 'money-track.repl)
+  (migrate)
   (start-server)
   ```
 

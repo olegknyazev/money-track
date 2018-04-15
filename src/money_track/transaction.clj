@@ -37,7 +37,9 @@
   ([] (get-transactions {}))
   ([params]
    (let [params (normalize-query-dates params)]
-     (data/query "SELECT * FROM transaction WHERE datetime >= ? AND datetime <= ?;"
+     (data/query "SELECT * FROM transaction 
+                    WHERE datetime >= ? AND datetime <= ?
+                    ORDER BY datetime;"
                   (:date-from params)
                   (:date-to params)))))
 

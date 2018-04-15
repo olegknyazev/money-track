@@ -16,10 +16,12 @@
                (fn [inst jsonGenerator]
                  (.writeString jsonGenerator (str inst)))))
 
-(defn initialize [{:keys [migrate] :or {migrate true}}]
-  (register-encoders)
-  (when migrate
-    (data/migrate)))
+(defn initialize
+  ([] (initialize {}))
+  ([{:keys [migrate] :or {migrate true}}]
+   (register-encoders)
+   (when migrate
+     (data/migrate))))
 
 (defroutes app-routes
   (ANY "/ping" req
